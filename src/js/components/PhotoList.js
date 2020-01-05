@@ -211,6 +211,27 @@ class PhotoList extends React.Component {
    	   url = `${API.photo_api}/${term}${API.app_id}`;   	   
 	   }
 
+	   // Search by User
+	   // allow users to search by photo by prepending user:{user_id} to search terms
+	   search_type = term.substring(0, 5);
+	   if (search_type === 'user:'){
+		   type = 'col';
+		   term = term.replace('user:', '');
+       url = `${API.search_users}/${term}/photos/${API.app_id}${API.posts_per_page}&page=${this.page}`;
+       let url2 = `${API.search_users}/${term}${API.app_id}`;
+       }
+
+	   // Search by Collection
+	   // allow users to search by photo by prepending col:{col_id} to search terms
+	   search_type = term.substring(0, 4);
+	   if (search_type === 'col:'){
+		   type = 'col';
+		   term = term.replace('col:', '');
+       url = `${API.search_coll}/${term}/photos/${API.app_id}${API.posts_per_page}&page=${this.page}`;
+       var url2 = `${API.search_coll}/${term}${API.app_id}`;
+       }      
+
+
       let input = document.querySelector('#photo-search');
       
 	   fetch(url)
@@ -253,7 +274,33 @@ class PhotoList extends React.Component {
    	         
    	         self.results = photoArray;
    	         self.setState({ results: self.results });
-            }
+			}
+			
+	         // Search by User's and Collection's
+	         if(type === 'col' && data){	         
+   	         
+   	         if(data.errors){ // If error was returned
+	   	         
+	   	         self.total_results = 0;        
+	   	         self.checkTotalResults('0');
+	   	         
+	   	      } else { // No errors, display results
+		   	      	
+				 fetch(url2)
+				 .then((data2) => data2.json())
+				 .then(function(data2) { 	
+					self.total_results = data2.total_photos;
+
+					// Check for returned data
+					self.checkTotalResults(data2.total_photos);              
+				
+				 });
+	   	         
+   	         }
+   	         
+   	         self.results = data;
+   	         self.setState({ results: self.results });
+            }			
 	         
 	         input.classList.remove('searching');	
 	         		      

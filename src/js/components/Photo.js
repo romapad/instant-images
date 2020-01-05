@@ -16,8 +16,8 @@ class Photo extends React.Component {
       this.filename = this.props.result.id;          
       this.title = this.img_title;
       this.alt = '';
-      this.caption = '';
       this.user = this.props.result.user.username;
+      this.caption = '<a href=https://unsplash.com/@' + this.user + '?utm_source=wordpress-instant-images&utm_medium=referral target=_blank>' + this.author + '</a>';
       this.user_photo = this.props.result.user.profile_image.small;
       this.link = this.props.result.links.html;
       this.likes = this.props.result.likes;
@@ -651,7 +651,7 @@ class Photo extends React.Component {
 	               </label>
 	               <label>
 	                  <span>{instant_img_localize.edit_caption}:</span>
-	                  <textarea rows="3" name="caption" data-original="" onChange={(e) => this.handleEditChange(e)} value={this.state.caption}></textarea>
+	                  <textarea rows="3" name="caption" data-original={this.caption} placeholder={this.caption} onChange={(e) => this.handleEditChange(e)} value={this.state.caption}></textarea>
 	               </label>
 	               <div className="edit-screen--controls">
 	                  <button type="button" className="button" onClick={(e) => this.cancelEditChange(e)}>{instant_img_localize.cancel}</button> &nbsp; 

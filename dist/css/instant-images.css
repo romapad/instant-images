@@ -597,7 +597,7 @@ input:-webkit-autofill {
 }
 
 .instant-img-container .control-nav li.search-field .searchResults:before {
-  border-color: transparent;
+  border-color: rgba(0, 0, 0, 0);
   border-left-color: #ebebae;
   border-width: 7px;
   margin-top: -7px;
@@ -706,7 +706,6 @@ input:-webkit-autofill {
 
 #photos {
   width: 100%;
-  width: -webkit-calc(100% + 10px);
   width: calc(100% + 10px);
   margin: 0 0 0 -5px;
   padding: 0;
@@ -1331,7 +1330,6 @@ input:-webkit-autofill {
 
 .instant-images-settings .cnkt-sidebar .cta.ii-plugins {
   width: 68.666%;
-  width: -webkit-calc(68.666% - 25px);
   width: calc(68.666% - 25px);
   float: right;
 }
@@ -1539,7 +1537,6 @@ input:-webkit-autofill {
 
 .components-panel .control-nav li.search-field form {
   height: auto;
-  width: -webkit-calc(100% + 16px);
   width: calc(100% + 16px);
   margin-left: -8px;
 }

@@ -55,7 +55,7 @@ function instant_images_resize_image( WP_REST_Request $request ) {
          $filetype = wp_check_filetype( basename( $filename ), null );
          $title = sanitize_text_field($data->title); // Title
          $alt = sanitize_text_field($data->alt); // Alt text
-         $caption = sanitize_text_field($data->caption); // Caption text
+         $caption = $data->caption; // Caption text
          $custom_filename = sanitize_title($data->custom_filename); // Custom filename
          
          $name = (!empty($custom_filename)) ? $custom_filename .'.jpg' : $name;
