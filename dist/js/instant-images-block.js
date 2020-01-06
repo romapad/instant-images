@@ -26808,14 +26808,12 @@ var PhotoList = function (_React$Component) {
 		var _this = _possibleConstructorReturn(this, (PhotoList.__proto__ || Object.getPrototypeOf(PhotoList)).call(this, props));
 
 		_this.results = _this.props.results ? _this.props.results : [];
-		_this.state = { results: _this.results };
-
 		_this.service = _this.props.service; // Unsplash, Pixabay, etc.
 		_this.orderby = _this.props.orderby; // Orderby
 		_this.page = _this.props.page; // Page
 
 		_this.is_search = false;
-		_this.search_term = '';
+		_this.search_term = 'col:9042608';
 		_this.total_results = 0;
 		_this.orientation = '';
 
@@ -26841,6 +26839,11 @@ var PhotoList = function (_React$Component) {
 			_this.container.classList.add('loading');
 			_this.wrapper = document.querySelector('.instant-images-wrapper');
 		}
+
+		_this.state = {
+			results: _this.results,
+			search_term: _this.search_term
+		};
 
 		return _this;
 	}
@@ -26997,6 +27000,7 @@ var PhotoList = function (_React$Component) {
 			var self = this;
 			var type = 'term';
 			this.page = 1; // reset page num
+			var url2 = '';
 
 			var url = '' + _API2.default.search_api + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page + '&query=' + this.search_term;
 
@@ -27020,8 +27024,8 @@ var PhotoList = function (_React$Component) {
 			if (search_type === 'user:') {
 				type = 'col';
 				term = term.replace('user:', '');
-				url = _API2.default.search_users + '/' + term + '/photos/' + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page;
-				var _url = _API2.default.search_users + '/' + term + _API2.default.app_id;
+				url = _API2.default.search_users + '/' + term + '/photos' + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page;
+				url2 = _API2.default.search_users + '/' + term + _API2.default.app_id;
 			}
 
 			// Search by Collection
@@ -27030,83 +27034,83 @@ var PhotoList = function (_React$Component) {
 			if (search_type === 'col:') {
 				type = 'col';
 				term = term.replace('col:', '');
-				url = _API2.default.search_coll + '/' + term + '/photos/' + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page;
-				var url2 = _API2.default.search_coll + '/' + term + _API2.default.app_id;
+				url = _API2.default.search_coll + '/' + term + '/photos' + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page;
+				url2 = _API2.default.search_coll + '/' + term + _API2.default.app_id;
 			}
 
 			var input = document.querySelector('#photo-search');
 
-			fetch(url).then(function (data) {
-				return data.json();
-			}).then(function (data) {
+			// Search by User's and Collection's
+			if (type === 'col') {
 
-				// Term Search
-				if (type === 'term') {
+				fetch(url2).then(function (data2) {
+					return data2.json();
+				}).then(function (data2) {
+					self.total_results = data2.total_photos;
+					// Check for returned data             
+					self.checkTotalResults(data2.total_photos);
 
-					self.total_results = data.total;
+					fetch(url).then(function (data) {
+						return data.json();
+					}).then(function (data) {
 
-					// Check for returned data
-					self.checkTotalResults(data.results.length);
+						self.results = data;
+						self.setState({ results: self.results });
+					});
+					input.classList.remove('searching');
+				}).catch(function (error) {
+					console.log(error);
+					self.isLoading = false;
+				});
+			} else {
 
-					// Update Props
-					self.results = data.results;
-					self.setState({ results: self.results });
-				}
+				fetch(url).then(function (data) {
+					return data.json();
+				}).then(function (data) {
 
-				// Search by photo ID
-				if (type === 'id' && data) {
+					// Term Search
+					if (type === 'term') {
 
-					// Convert return data to array   	         
-					var photoArray = [];
+						self.total_results = data.total;
 
-					if (data.errors) {
-						// If error was returned
+						// Check for returned data
+						self.checkTotalResults(data.results.length);
 
-						self.total_results = 0;
-						self.checkTotalResults('0');
-					} else {
-						// No errors, display results
-
-						photoArray.push(data);
-
-						self.total_results = 1;
-						self.checkTotalResults('1');
+						// Update Props
+						self.results = data.results;
+						self.setState({ results: self.results });
 					}
 
-					self.results = photoArray;
-					self.setState({ results: self.results });
-				}
+					// Search by photo ID
+					if (type === 'id' && data) {
 
-				// Search by User's and Collection's
-				if (type === 'col' && data) {
+						// Convert return data to array   	         
+						var photoArray = [];
 
-					if (data.errors) {
-						// If error was returned
+						if (data.errors) {
+							// If error was returned
 
-						self.total_results = 0;
-						self.checkTotalResults('0');
-					} else {
-						// No errors, display results
+							self.total_results = 0;
+							self.checkTotalResults('0');
+						} else {
+							// No errors, display results
 
-						fetch(url2).then(function (data2) {
-							return data2.json();
-						}).then(function (data2) {
-							self.total_results = data2.total_photos;
+							photoArray.push(data);
 
-							// Check for returned data
-							self.checkTotalResults(data2.total_photos);
-						});
+							self.total_results = 1;
+							self.checkTotalResults('1');
+						}
+
+						self.results = photoArray;
+						self.setState({ results: self.results });
 					}
 
-					self.results = data;
-					self.setState({ results: self.results });
-				}
-
-				input.classList.remove('searching');
-			}).catch(function (error) {
-				console.log(error);
-				self.isLoading = false;
-			});
+					input.classList.remove('searching');
+				}).catch(function (error) {
+					console.log(error);
+					self.isLoading = false;
+				});
+			}
 		}
 
 		/**
@@ -27146,35 +27150,72 @@ var PhotoList = function (_React$Component) {
 			var url = '' + _API2.default.photo_api + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page + '&order_by=' + this.orderby;
 
 			if (this.is_search) {
-				url = '' + _API2.default.search_api + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page + '&query=' + this.search_term;
+
+				var search_type = void 0;
+				var term = void 0;
+
+				if (this.search_term.substring(0, 4) === 'col:') {
+					search_type = 'col';
+					term = this.search_term.replace('col:', '');
+					url = _API2.default.search_coll + '/' + term + '/photos' + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page;
+				} else if (this.search_term.substring(0, 5) === 'user:') {
+					search_type = 'user';
+					term = this.search_term.replace('user:', '');
+					url = _API2.default.search_users + '/' + term + '/photos' + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page;
+				} else {
+					url = '' + _API2.default.search_api + _API2.default.app_id + _API2.default.posts_per_page + '&page=' + this.page + '&query=' + this.search_term;
+				}
+
 				if (this.hasOrientation()) {
 					// Set orientation
 					url = url + '&orientation=' + this.orientation;
 				}
-			}
 
-			fetch(url).then(function (data) {
-				return data.json();
-			}).then(function (data) {
+				fetch(url).then(function (data) {
+					return data.json();
+				}).then(function (data) {
 
-				if (self.is_search) {
-					data = data.results; // Search results are recieved in different JSON format
-				}
+					if (search_type === 'col' || search_type === 'user') {
+						data = data;
+					} else {
+						data = data.results; // Search results are recieved in different JSON format	
+					}
 
-				// Loop results, push items into array
-				data.map(function (data) {
-					self.results.push(data);
+					// Loop results, push items into array
+					data.map(function (data) {
+						self.results.push(data);
+					});
+
+					// Check for returned data
+					self.checkTotalResults(data.length);
+
+					// Update Props
+					self.setState({ results: self.results });
+				}).catch(function (error) {
+					console.log(error);
+					self.isLoading = false;
 				});
+			} else {
 
-				// Check for returned data
-				self.checkTotalResults(data.length);
+				fetch(url).then(function (data) {
+					return data.json();
+				}).then(function (data) {
 
-				// Update Props
-				self.setState({ results: self.results });
-			}).catch(function (error) {
-				console.log(error);
-				self.isLoading = false;
-			});
+					// Loop results, push items into array
+					data.map(function (data) {
+						self.results.push(data);
+					});
+
+					// Check for returned data
+					self.checkTotalResults(data.length);
+
+					// Update Props
+					self.setState({ results: self.results });
+				}).catch(function (error) {
+					console.log(error);
+					self.isLoading = false;
+				});
+			}
 		}
 
 		/**
@@ -27337,6 +27378,25 @@ var PhotoList = function (_React$Component) {
 				});
 			}
 		}
+
+		/*
+  * handleEditChange
+  * Handles the change event for the edit screen 
+  * 
+  * @since 3.2
+  */
+
+	}, {
+		key: 'handleEditChange',
+		value: function handleEditChange(e) {
+			var target = e.target.name;
+
+			if (target === 'search_term') {
+				this.setState({
+					search_term: e.target.value
+				});
+			}
+		}
 	}, {
 		key: 'render',
 		value: function render() {
@@ -27392,7 +27452,9 @@ var PhotoList = function (_React$Component) {
 							{ onSubmit: function onSubmit(e) {
 									return _this3.search(e);
 								}, autoComplete: 'off' },
-							_react2.default.createElement('input', { type: 'search', id: 'photo-search', placeholder: instant_img_localize.search }),
+							_react2.default.createElement('input', { type: 'search', name: 'search_term', id: 'photo-search', placeholder: instant_img_localize.search, 'data-original': this.search_term, value: this.state.search_term, onChange: function onChange(e) {
+									return _this3.handleEditChange(e);
+								} }),
 							_react2.default.createElement(
 								'button',
 								{ type: 'submit', id: 'photo-search-submit' },

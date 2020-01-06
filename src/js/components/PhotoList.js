@@ -12,15 +12,13 @@ class PhotoList extends React.Component {
 		
       super(props);            
       
-      this.results = (this.props.results) ? this.props.results : [];	      
-      this.state = { results: this.results }; 
-         
+      this.results = (this.props.results) ? this.props.results : [];	               
       this.service = this.props.service; // Unsplash, Pixabay, etc.
       this.orderby = this.props.orderby; // Orderby
       this.page = this.props.page; // Page
       
       this.is_search = false;
-      this.search_term = '';
+      this.search_term = 'col:9042608';
       this.total_results = 0;
       this.orientation = '';
       
@@ -45,7 +43,12 @@ class PhotoList extends React.Component {
 		   this.container.classList.add('loading');
 			this.wrapper = document.querySelector('.instant-images-wrapper');
 			
-      }      
+	  }  
+
+	  this.state = { 
+		results: this.results,
+		search_term: this.search_term
+	  }; 
       
    }
    
@@ -193,7 +196,8 @@ class PhotoList extends React.Component {
       
       let self = this;
       let type = 'term';
-      this.page = 1; // reset page num
+	  this.page = 1; // reset page num
+	  let url2 = '';
       
 	   let url = `${API.search_api}${API.app_id}${API.posts_per_page}&page=${this.page}&query=${this.search_term}`;
 	   
@@ -217,8 +221,8 @@ class PhotoList extends React.Component {
 	   if (search_type === 'user:'){
 		   type = 'col';
 		   term = term.replace('user:', '');
-       url = `${API.search_users}/${term}/photos/${API.app_id}${API.posts_per_page}&page=${this.page}`;
-       let url2 = `${API.search_users}/${term}${API.app_id}`;
+       url = `${API.search_users}/${term}/photos${API.app_id}${API.posts_per_page}&page=${this.page}`;
+       url2 = `${API.search_users}/${term}${API.app_id}`;
        }
 
 	   // Search by Collection
@@ -227,13 +231,40 @@ class PhotoList extends React.Component {
 	   if (search_type === 'col:'){
 		   type = 'col';
 		   term = term.replace('col:', '');
-       url = `${API.search_coll}/${term}/photos/${API.app_id}${API.posts_per_page}&page=${this.page}`;
-       var url2 = `${API.search_coll}/${term}${API.app_id}`;
+       url = `${API.search_coll}/${term}/photos${API.app_id}${API.posts_per_page}&page=${this.page}`;
+       url2 = `${API.search_coll}/${term}${API.app_id}`;
        }      
 
 
       let input = document.querySelector('#photo-search');
-      
+ 
+	  // Search by User's and Collection's
+	  if(type === 'col'){	         
+		   	      	
+		fetch(url2)
+		.then((data2) => data2.json())
+		.then(function(data2) { 	
+		   self.total_results = data2.total_photos;
+		   // Check for returned data             
+		   self.checkTotalResults(data2.total_photos); 
+			
+		fetch(url)
+		.then((data) => data.json())
+	    .then(function(data) {  
+			   
+			   self.results = data;
+			   self.setState({ results: self.results });
+		});
+		input.classList.remove('searching');	
+	         		      
+	    })
+	      .catch(function(error) {
+            console.log(error);
+            self.isLoading = false;
+         });
+		
+	  } else {
+
 	   fetch(url)
 	      .then((data) => data.json())
          .then(function(data) {            
@@ -274,33 +305,7 @@ class PhotoList extends React.Component {
    	         
    	         self.results = photoArray;
    	         self.setState({ results: self.results });
-			}
-			
-	         // Search by User's and Collection's
-	         if(type === 'col' && data){	         
-   	         
-   	         if(data.errors){ // If error was returned
-	   	         
-	   	         self.total_results = 0;        
-	   	         self.checkTotalResults('0');
-	   	         
-	   	      } else { // No errors, display results
-		   	      	
-				 fetch(url2)
-				 .then((data2) => data2.json())
-				 .then(function(data2) { 	
-					self.total_results = data2.total_photos;
-
-					// Check for returned data
-					self.checkTotalResults(data2.total_photos);              
-				
-				 });
-	   	         
-   	         }
-   	         
-   	         self.results = data;
-   	         self.setState({ results: self.results });
-            }			
+			}			
 	         
 	         input.classList.remove('searching');	
 	         		      
@@ -310,8 +315,8 @@ class PhotoList extends React.Component {
             self.isLoading = false;
          });
 		      
+   	  }
    }
-   
    
    
    /**
@@ -339,32 +344,72 @@ class PhotoList extends React.Component {
 	 */
    getPhotos(){
       
-		let self = this;
-	   this.page = parseInt(this.page) + 1;
+	  let self = this;
+	  this.page = parseInt(this.page) + 1;
       this.container.classList.add('loading');
       this.isLoading = true;
 	      
 	   let url = `${API.photo_api}${API.app_id}${API.posts_per_page}&page=${this.page}&order_by=${this.orderby}`;
 	   
-	   if(this.is_search){
-		   url = `${API.search_api}${API.app_id}${API.posts_per_page}&page=${this.page}&query=${this.search_term}`;
+	   if(this.is_search){   
+
+		   let search_type;
+		   let term;
+
+		   if(this.search_term.substring(0, 4) === 'col:') {
+			   	search_type = 'col';
+				term = this.search_term.replace('col:', '');
+				url = `${API.search_coll}/${term}/photos${API.app_id}${API.posts_per_page}&page=${this.page}`;
+		   } else if (this.search_term.substring(0, 5) === 'user:') {
+				search_type = 'user';
+				term = this.search_term.replace('user:', '');
+				url = `${API.search_users}/${term}/photos${API.app_id}${API.posts_per_page}&page=${this.page}`;
+		   } else {
+				url = `${API.search_api}${API.app_id}${API.posts_per_page}&page=${this.page}&query=${this.search_term}`;
+		   }  
+		   
 		   if(this.hasOrientation()){
 			   // Set orientation
 			   url = `${url}&orientation=${this.orientation}`;
 		   }
-	   }
-	   
+
+		   fetch(url)
+		   .then((data) => data.json())
+		  .then(function(data) {
+			  
+				 if(search_type === 'col' || search_type === 'user') {
+					 data = data;
+				 } else {
+					 data = data.results; // Search results are recieved in different JSON format	
+				 }
+			  
+			  // Loop results, push items into array
+			  data.map( data => { 
+					 self.results.push(data); 		         
+			   });
+			   
+			   // Check for returned data
+			   self.checkTotalResults(data.length);
+			   
+			   // Update Props
+			  self.setState({ results: self.results });
+			   
+		   })
+		   .catch(function(error) {
+			 console.log(error);
+			 self.isLoading = false;
+		  });
+
+
+	   } else {
+
 		fetch(url)
 	      .then((data) => data.json())
          .then(function(data) {
 	         
-	         if(self.is_search){
-	            data = data.results; // Search results are recieved in different JSON format
-	         }
-	         
 	         // Loop results, push items into array
 	         data.map( data => { 
-		         self.results.push(data); 
+					self.results.push(data); 		         
 		      });
 		      
 		      // Check for returned data
@@ -378,6 +423,8 @@ class PhotoList extends React.Component {
             console.log(error);
             self.isLoading = false;
          });
+
+	   }
 	      
    } 
    
@@ -531,6 +578,22 @@ class PhotoList extends React.Component {
       
    }   
  
+   /*
+	 * handleEditChange
+	 * Handles the change event for the edit screen 
+	 * 
+	 * @since 3.2
+	 */
+	handleEditChange(e) {
+		let target = e.target.name;
+		
+		if(target === 'search_term'){
+		   this.setState({
+			search_term: e.target.value
+		   });
+		}
+	 }
+	 
  
    
    render(){	
@@ -547,7 +610,7 @@ class PhotoList extends React.Component {
 					<li><a className="oldest" href="javascript:void(0);" onClick={(e) => this.togglePhotoList('oldest', e)}>{ instant_img_localize.oldest }</a></li>
 					<li className="search-field" id="search-bar">
    					<form onSubmit={(e) => this.search(e)} autoComplete="off">
-   						<input type="search" id="photo-search" placeholder={ instant_img_localize.search } />
+   						<input type="search" name="search_term" id="photo-search" placeholder={ instant_img_localize.search } data-original={ this.search_term } value={this.state.search_term} onChange={(e) => this.handleEditChange(e)} />
    						<button type="submit" id="photo-search-submit"><i className="fa fa-search"></i></button>	
    						<ResultsToolTip isSearch={ this.is_search } total={ this.total_results } title={ this.total_results + ' ' + instant_img_localize.search_results + ' ' + this.search_term } />			
                   </form>                                    
